@@ -1,0 +1,998 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap");
+
+:root {
+  color-scheme: dark;
+  --bg: #0b0f16;
+  --panel: #101826;
+  --panel2: #0f1622;
+  --text: #e6eefc;
+  --muted: #9db0d3;
+  --border: #24324a;
+  --accent: #5cc8ff;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #0f1622, #0b0f16);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.brand .title {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.brand .titleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brandHelp {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  cursor: help;
+}
+
+.brandHelp i {
+  font-size: 14px;
+}
+
+.brandHelp:focus-visible,
+.brandHelp:hover {
+  color: var(--accent);
+  outline: none;
+}
+
+.brandTooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 280px;
+  max-width: min(90vw, 420px);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease-in;
+  z-index: 10;
+}
+
+.brandTooltip strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.brandTooltip em {
+  color: var(--muted);
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.brandHelp:focus-visible .brandTooltip,
+.brandHelp:hover .brandTooltip {
+  opacity: 1;
+}
+
+.brand .subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.iconControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.iconControls button {
+  padding: 7px 8px;
+}
+
+button {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button i {
+  font-size: 16px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  border-color: #35507a;
+}
+
+/* Toggle buttons */
+.toggle-btn {
+  opacity: 0.5;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.toggle-btn.active {
+  opacity: 1;
+  border-color: var(--border);
+}
+
+.toggle-btn:hover:not(:disabled) {
+  opacity: 1;
+}
+
+/* Turbo badge - only show when active */
+.turbo-stack {
+  position: relative;
+}
+
+.turbo-badge {
+  display: none;
+  position: absolute;
+  right: -0.18em;
+  bottom: -0.14em;
+  font-size: 0.65em;
+  line-height: 1;
+  color: #ef4444;
+}
+
+.toggle-btn.active .turbo-badge {
+  display: inline-block;
+}
+
+/* Audio icons - swap based on state */
+.audio-off {
+  display: none;
+}
+
+.toggle-btn:not(.active) .audio-off {
+  display: inline;
+}
+
+.toggle-btn:not(.active) .audio-on {
+  display: none;
+}
+
+.joystick-stack {
+  position: relative;
+}
+
+.joystick-off-mark {
+  position: absolute;
+  right: -0.04em;
+  bottom: -0.08em;
+  font-size: 0.8em;
+  color: #ef4444;
+}
+
+.toggle-btn.active .joystick-off-mark {
+  display: none;
+}
+
+.keyboard-stack {
+  position: relative;
+}
+
+.keyboard-off-mark {
+  position: absolute;
+  right: -0.04em;
+  bottom: -0.08em;
+  font-size: 0.8em;
+  color: #ef4444;
+}
+
+.toggle-btn.active .keyboard-off-mark {
+  display: none;
+}
+
+.chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.chk i {
+  font-size: 14px;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  gap: 10px;
+}
+
+.screenPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.screenViewport {
+  width: 100%;
+  min-width: 0;
+  min-height: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+}
+
+.screenViewport:fullscreen,
+.screenViewport:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  background: #000;
+  padding: 0;
+}
+
+.keyboardPanel {
+  width: min(100%, 1160px);
+  border: 0;
+  border-radius: 0;
+  padding: 8px 0 18px;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  align-self: center;
+}
+
+.keyboardPanel[hidden] {
+  display: none;
+}
+
+.joystickPanel {
+  width: min(100%, 500px);
+  border: 1px solid #262626;
+  border-radius: 12px;
+  padding: 10px;
+  background: linear-gradient(180deg, #2f2f2f 0%, #272727 100%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  align-self: center;
+}
+
+.joystickPanel[hidden] {
+  display: none;
+}
+
+.joystickPanelInner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2px;
+}
+
+.cx40 {
+  width: 352px;
+  height: 352px;
+  position: relative;
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.55));
+}
+
+.cx40-base {
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
+  border-radius: 53px;
+  position: relative;
+  box-shadow:
+    inset 0 4px 10px rgba(255, 255, 255, 0.1),
+    10px 30px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 2px #111;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.cx40-cable {
+  position: absolute;
+  top: -35px;
+  right: 70px;
+  width: 11px;
+  height: 44px;
+  background: #2a2a2a;
+  border-radius: 6px 6px 0 0;
+  box-shadow: inset -3px 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.cx40-markings-ring {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  width: 246px;
+  height: 246px;
+  transform: translate(-50%, -50%);
+  border: 4px dashed #ff7b00;
+  border-radius: 50%;
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.cx40-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 11px solid #ff7b00;
+}
+
+.cx40-arrow-up {
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cx40-arrow-down {
+  bottom: 9px;
+  left: 50%;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+.cx40-arrow-left {
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+.cx40-arrow-right {
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.cx40-top-label {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateY(-135px);
+  font-size: 12px;
+  font-weight: 700;
+  color: #ff7b00;
+  font-family: "Roboto Condensed", "Courier New", monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.cx40-fire-housing {
+  position: absolute;
+  top: 22px;
+  left: 30px;
+  width: 46px;
+  height: 46px;
+  z-index: 12;
+}
+
+.cx40-fire-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: radial-gradient(circle at 30% 30%, #ff5f52, #a31100);
+  box-shadow:
+    0 4px 0 #7a0d00,
+    0 6px 15px rgba(0, 0, 0, 0.5);
+  transition: transform 0.1s, box-shadow 0.1s;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+}
+
+.cx40-fire-btn:active,
+.cx40-fire-btn.active {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 #7a0d00,
+    0 2px 5px rgba(0, 0, 0, 0.5);
+  background: radial-gradient(circle at 30% 30%, #e6453a, #8a0e00);
+}
+
+.cx40-boot {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  width: 176px;
+  height: 176px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle,
+    #181818,
+    #181818 10px,
+    #080808 12px,
+    #080808 15px
+  );
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cx40-stick-area {
+  width: 70px;
+  height: 70px;
+  position: relative;
+  z-index: 10;
+  cursor: grab;
+  transition: transform 0.05s linear;
+}
+
+.cx40-stick-area.grabbing {
+  cursor: grabbing;
+  transition: none;
+}
+
+.cx40-stick-hex {
+  width: 70px;
+  height: 70px;
+  background: #2a2a2a;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  box-shadow:
+    inset 0 5px 10px rgba(255, 255, 255, 0.1),
+    inset 0 -5px 10px rgba(0, 0, 0, 0.5);
+  position: absolute;
+}
+
+.cx40-stick-hex::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 35px;
+  height: 35px;
+  transform: translate(-50%, -50%);
+  background: #222;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.05);
+}
+
+.cx40-stick-shaft {
+  position: absolute;
+  width: 53px;
+  height: 53px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  top: 9px;
+  left: 9px;
+  z-index: -1;
+}
+
+.cx40-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 176px;
+  height: 176px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.cx40-glow.up {
+  background: linear-gradient(to bottom, rgba(255, 123, 0, 0.2) 0%, transparent 46%);
+}
+
+.cx40-glow.down {
+  background: linear-gradient(to top, rgba(255, 123, 0, 0.2) 0%, transparent 46%);
+}
+
+.cx40-glow.left {
+  background: linear-gradient(to right, rgba(255, 123, 0, 0.2) 0%, transparent 46%);
+}
+
+.cx40-glow.right {
+  background: linear-gradient(to left, rgba(255, 123, 0, 0.2) 0%, transparent 46%);
+}
+
+.cx40-glow.active {
+  opacity: 1;
+}
+
+.atariKeyboard {
+  --bed: #3a3a3c;
+  --bed-hi: #484849;
+  --key-top: #3a3c42;
+  --key-bot: #1b1c20;
+  --legend: #e8eaee;
+  --legend-dim: #c0c4ca;
+  --metal: #bab2a0;
+  --metal-hi: #d0c8b8;
+  --gap: clamp(2px, 0.65vw, 7px);
+  --key-h: clamp(14px, 4.6vw, 52px);
+  --radius: clamp(4px, 1.2vw, 14px);
+  --inner-radius: clamp(3px, 1vw, 12px);
+  --shell-pad-x: clamp(5px, 1.8vw, 20px);
+  --shell-pad-top: clamp(5px, 1.8vw, 20px);
+  --shell-pad-bottom: clamp(7px, 2.4vw, 30px);
+  --deck-pad-x: clamp(4px, 1.35vw, 15px);
+  --deck-pad-top: clamp(4px, 1.35vw, 15px);
+  --deck-pad-bottom: clamp(6px, 2vw, 24px);
+  --main-pad-bottom: clamp(2px, 0.8vw, 8px);
+  --side-pad-x: clamp(3px, 1.1vw, 14px);
+  --key-font: clamp(6px, 1.3vw, 15px);
+  --key-font-wide: clamp(5px, 1.05vw, 12px);
+  --mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  min-width: 0;
+  width: min(100%, 1100px);
+  margin-inline: auto;
+  color: var(--legend);
+  font-family: var(--mono);
+}
+
+.atariKeyboard .atari {
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+.atariKeyboard .case-keyboard {
+  padding: var(--shell-pad-top) var(--shell-pad-x) var(--shell-pad-bottom);
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0) 18%),
+    linear-gradient(180deg, var(--bed-hi), var(--bed));
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.atariKeyboard .deck {
+  border-radius: var(--inner-radius);
+  padding: var(--deck-pad-top) var(--deck-pad-x) var(--deck-pad-bottom);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.18)),
+    linear-gradient(180deg, #2e2e30, #222224);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.atariKeyboard .main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding-bottom: var(--main-pad-bottom);
+}
+
+.atariKeyboard .row {
+  display: flex;
+  gap: var(--gap);
+  align-items: stretch;
+}
+
+.atariKeyboard .spacer {
+  flex: var(--w, 1) 0 0;
+  min-width: 0;
+}
+
+.atariKeyboard .key {
+  flex: var(--w, 1) 0 0;
+  min-width: 0;
+  height: var(--key-h);
+  border-radius: clamp(2px, 0.7vw, 7px);
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0) 40%),
+    linear-gradient(180deg, var(--key-top), var(--key-bot));
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5), 0 6px 12px rgba(0, 0, 0, 0.28);
+  color: var(--legend);
+  font-family: var(--mono);
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  touch-action: manipulation;
+  padding: 4px 6px;
+  display: grid;
+  place-items: center;
+  outline: none;
+  text-transform: uppercase;
+  font-size: var(--key-font);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.atariKeyboard .key::after {
+  content: "";
+  position: absolute;
+  inset: 4px 5px auto 5px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.atariKeyboard .key .leg {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: 1px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.atariKeyboard .key .top {
+  font-size: clamp(3px, 0.95vw, 10px);
+  color: var(--legend-dim);
+  transform: translateY(1px);
+}
+
+.atariKeyboard .key .mainlbl {
+  font-size: clamp(4px, 1.35vw, 15px);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.atariKeyboard .key .sublbl {
+  font-size: clamp(2px, 0.82vw, 9px);
+  color: var(--legend-dim);
+  line-height: 1.05;
+}
+
+.atariKeyboard .key.small .mainlbl {
+  font-size: clamp(3px, 1.1vw, 13px);
+}
+
+.atariKeyboard .key.wide .mainlbl {
+  letter-spacing: 0.04em;
+}
+
+.atariKeyboard .key.wide {
+  font-size: var(--key-font-wide);
+  letter-spacing: 0.03em;
+}
+
+.atariKeyboard .key.space {
+  border-radius: clamp(2px, 0.9vw, 8px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0) 36%),
+    linear-gradient(180deg, #38393f, #1e1f24);
+}
+
+.atariKeyboard .key.pressed,
+.atariKeyboard .key:active,
+.atariKeyboard .key.active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.atariKeyboard .case-side {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0) 15%),
+    linear-gradient(180deg, var(--bed-hi), var(--bed));
+  padding:
+    calc(var(--shell-pad-top) + var(--deck-pad-top))
+    var(--side-pad-x)
+    calc(var(--shell-pad-bottom) + var(--deck-pad-bottom) + var(--main-pad-bottom));
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0;
+  border-left: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.atariKeyboard .side-keys {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding-right: clamp(2px, 0.8vw, 10px);
+}
+
+.atariKeyboard .side-key {
+  height: var(--key-h);
+  width: clamp(16px, 5.8vw, 66px);
+  border-radius: clamp(2px, 0.6vw, 6px);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0.05)),
+    linear-gradient(180deg, var(--metal-hi), var(--metal));
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3), 0 6px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  outline: none;
+  padding: 0;
+}
+
+.atariKeyboard .side-key.pressed,
+.atariKeyboard .side-key:active,
+.atariKeyboard .side-key.active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 3px 8px rgba(0, 0, 0, 0.18);
+}
+
+.atariKeyboard .strip {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: clamp(2px, 0.8vw, 10px);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.atariKeyboard .strip-label {
+  height: var(--key-h);
+  margin-bottom: var(--gap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.85);
+  font: 700 clamp(3px, 0.9vw, 11px) / 1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  user-select: none;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.atariKeyboard .strip-label:last-child {
+  margin-bottom: 0;
+}
+
+.atariKeyboard .kbKey:focus-visible {
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.5),
+    0 8px 14px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.atariKeyboard .side-key.kbKey:focus-visible {
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.3),
+    0 6px 12px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+@media (max-width: 780px) {
+  .atariKeyboard {
+    width: 100%;
+  }
+  .atariKeyboard .atari {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  .atariKeyboard .case-side {
+    padding: clamp(4px, 1.4vw, 16px) var(--side-pad-x);
+    grid-template-columns: 1fr;
+    border-left: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .atariKeyboard .case-keyboard {
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .atariKeyboard .side-keys {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--gap);
+    padding-right: 0;
+    padding-bottom: 4px;
+  }
+  .atariKeyboard .side-key {
+    width: 100%;
+    min-width: 0;
+    flex: initial;
+  }
+  .atariKeyboard .strip {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--gap);
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-left: 0;
+    padding-top: 6px;
+    align-items: center;
+  }
+  .atariKeyboard .strip-label {
+    height: clamp(10px, 3.2vw, 16px);
+    margin-bottom: 0;
+    font-size: clamp(6px, 1.9vw, 10px);
+    letter-spacing: 0.03em;
+    line-height: 1.1;
+    min-width: 0;
+    width: 100%;
+    flex: initial;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    text-align: center;
+  }
+  .atariKeyboard .key .mainlbl {
+    font-size: clamp(6px, 2vw, 15px);
+  }
+  .atariKeyboard .key {
+    font-size: clamp(6px, 2vw, 11px);
+  }
+  .atariKeyboard .key.wide {
+    font-size: clamp(5px, 1.7vw, 10px);
+    letter-spacing: 0.02em;
+  }
+  .atariKeyboard .key.small .mainlbl {
+    font-size: clamp(5px, 1.8vw, 13px);
+  }
+  .atariKeyboard .key .top {
+    font-size: clamp(4px, 1.5vw, 10px);
+  }
+  .atariKeyboard .key .sublbl {
+    font-size: clamp(3px, 1.2vw, 9px);
+  }
+}
+
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 336 / 240;
+  flex: 0 0 auto;
+  image-rendering: pixelated;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #000;
+  outline: none;
+}
+
+canvas.crtEnabled {
+  image-rendering: auto;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  width: 100%;
+}
+
+.fileBtn {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.fileBtn input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.fileBtn span {
+  display: inline-flex;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+
+.fileBtn:hover span {
+  border-color: #35507a;
+}
+
+.fileBtn .status-icon {
+  margin-left: 6px;
+  font-size: 13px;
+}
+
+.fileBtn .status-icon.fa-circle-check {
+  color: #4ade80;
+}
+
+.fileBtn .status-icon.fa-circle-xmark {
+  color: #f87171;
+  opacity: 0.6;
+}
+
+
+@media (max-width: 980px) {
+  body {
+    overflow: auto;
+  }
+  .layout {
+    flex: none;
+    overflow-y: auto;
+  }
+  .keyboardPanel {
+    width: 100%;
+    padding: 8px 8px 18px;
+    align-self: stretch;
+  }
+  .joystickPanel {
+    width: 100%;
+    padding: 8px;
+    align-self: stretch;
+  }
+  .cx40 {
+    width: min(352px, calc(100vw - 64px));
+    height: min(352px, calc(100vw - 64px));
+  }
+  .joystickPanelInner {
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+  }
+  .atariKeyboard {
+    width: 100%;
+    margin-inline: 0;
+  }
+}

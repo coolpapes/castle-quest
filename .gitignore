@@ -1,0 +1,18 @@
+# ROM files (copyrighted - use embedded Altirra replacements instead)
+ATARIXL.ROM
+ATARIBAS.ROM
+
+# Intermediate files
+*.b64
+altirra_os_xl.b64
+altirra_basic.b64
+
+# Atari800 source (used only to extract Altirra ROMs)
+A8E/atari800-src/
+
+# Claude project files
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>jsA8E</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="titleRow">
+          <a href="https://github.com/AnimaInCorpore/A8E" class="title" target="_blank" rel="noopener noreferrer">jsA8E</a>
+          <span class="brandHelp" tabindex="0" role="button" aria-label="Show emulator credits">
+            <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+            <span class="brandTooltip" role="tooltip">
+              <strong>jsA8E - Atari 800 XL Emulator</strong><br />
+              <img src="a8e.webp" alt="A8E Logo" style="max-width: 100%; height: auto;"><br />
+              <em>Emulator by Sascha Springer • CRT Shader by Timothy Lottes</em><br />
+              <em id="buildVersionLine" style="font-size: 11px; opacity: 0.8;">Build version: loading...</em><br />
+              <em style="font-size: 11px; opacity: 0.7;">JavaScript port developed with AI assistance</em><br />
+              <br />
+              <strong>Keyboard Controls:</strong><br />
+              Type normally on the Atari keyboard. Use Ctrl and Shift as modifiers.<br />
+              <br />
+              <strong>Joystick Controls:</strong><br />
+              • <strong>Arrow Keys</strong> - Joystick direction (Up/Down/Left/Right)<br />
+              • <strong>Left Alt</strong> - Fire button (Trigger 0)<br />
+              • <strong>Right Alt</strong> - Trigger 2<br />
+              • <strong>Win/Cmd</strong> - Trigger 3<br />
+              <br />
+              <strong>Console Keys:</strong><br />
+              <strong>F2</strong> OPTION • <strong>F3</strong> SELECT • <strong>F4</strong> START • <strong>F5</strong> RESET • <strong>F8</strong> BREAK<br />
+              <br />
+              <strong>Status Icons:</strong> <i class="fa-solid fa-circle-xmark"></i> not loaded • <i class="fa-solid fa-circle-check"></i> loaded<br />
+              <strong>Menu Icons:</strong><br />
+              <i class="fa-solid fa-play"></i> run/pause • <i class="fa-solid fa-rotate-right"></i> reset • <i class="fa-solid fa-expand"></i> fullscreen<br />
+              <i class="fa-solid fa-microchip"></i> CPU turbo • <i class="fa-solid fa-floppy-disk"></i> SIO turbo • <i class="fa-solid fa-volume-high"></i> audio<br />
+              <i class="fa-solid fa-gamepad"></i> joystick panel • <i class="fa-solid fa-keyboard"></i> keyboard panel • <i class="fa-solid fa-hand-point-down"></i> OPTION on boot (BASIC off)<br />
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="fileBtn" title="Load the Atari XL operating system ROM (ATARIXL.ROM). This file is required for a normal boot. Status icon: red cross means not loaded, green check means loaded.">
+          <input type="file" id="romOs" accept=".rom,application/octet-stream" />
+          <span>ATARIXL.ROM <i id="romOsStatus" class="fa-solid fa-circle-xmark status-icon"></i></span>
+        </label>
+        <label class="fileBtn" title="Load the Atari BASIC ROM (ATARIBAS.ROM). Keep this loaded for BASIC programs; disable with Option on Start when software requires BASIC off. Status icon: red cross means not loaded, green check means loaded.">
+          <input type="file" id="romBasic" accept=".rom,application/octet-stream" />
+          <span>ATARIBAS.ROM <i id="romBasicStatus" class="fa-solid fa-circle-xmark status-icon"></i></span>
+        </label>
+        <label class="fileBtn" title="Load an ATR disk image into drive 1. Status icon: red cross means no disk loaded, green check means disk loaded.">
+          <input type="file" id="disk1" accept=".atr,application/octet-stream" />
+          <span>Load ATR <i id="diskStatus" class="fa-solid fa-circle-xmark status-icon"></i></span>
+        </label>
+        <div class="iconControls">
+          <button id="btnStart" title="Start emulation and run the loaded Atari system." aria-label="Start emulation and run the loaded Atari system."><i class="fa-solid fa-play"></i></button>
+          <button id="btnReset" disabled title="Reset the emulated Atari to its startup state while keeping the loaded files." aria-label="Reset the emulated Atari to its startup state while keeping the loaded files."><i class="fa-solid fa-rotate-right"></i></button>
+          <button id="btnFullscreen" title="Enter fullscreen mode for the emulator display area." aria-label="Enter fullscreen mode for the emulator display area."><i class="fa-solid fa-expand"></i></button>
+          <button id="btnTurbo" class="toggle-btn" title="Toggle CPU turbo mode to run emulation faster than normal speed." aria-label="Toggle CPU turbo mode to run emulation faster than normal speed.">
+            <span class="fa-layers fa-fw turbo-stack">
+              <i class="fa-solid fa-microchip"></i>
+              <i class="fa-solid fa-forward-fast turbo-badge"></i>
+            </span>
+          </button>
+          <button id="btnSioTurbo" class="toggle-btn active" title="Toggle SIO turbo mode. This accelerates only SIO disk transfer timing and does not speed up overall CPU execution." aria-label="Toggle SIO turbo mode. This accelerates only SIO disk transfer timing and does not speed up overall CPU execution.">
+            <span class="fa-layers fa-fw turbo-stack">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <i class="fa-solid fa-forward-fast turbo-badge"></i>
+            </span>
+          </button>
+          <button id="btnAudio" class="toggle-btn active" title="Toggle emulator audio output on or off." aria-label="Toggle emulator audio output on or off.">
+            <i class="fa-solid fa-volume-high audio-on"></i>
+            <i class="fa-solid fa-volume-xmark audio-off"></i>
+          </button>
+          <button id="btnJoystick" class="toggle-btn" title="Show the on-screen joystick controls." aria-label="Show the on-screen joystick controls.">
+            <span class="fa-layers fa-fw joystick-stack">
+              <i class="fa-solid fa-gamepad"></i>
+              <i class="fa-solid fa-slash joystick-off-mark"></i>
+            </span>
+          </button>
+          <button id="btnKeyboard" class="toggle-btn active" title="Hide the on-screen keyboard controls." aria-label="Hide the on-screen keyboard controls.">
+            <span class="fa-layers fa-fw keyboard-stack">
+              <i class="fa-solid fa-keyboard"></i>
+              <i class="fa-solid fa-slash keyboard-off-mark"></i>
+            </span>
+          </button>
+          <button id="btnOptionOnStart" class="toggle-btn active" title="Toggle Option on Start. When enabled, OPTION is held during boot to disable BASIC ROM mapping for software that requires BASIC off." aria-label="Toggle Option on Start. When enabled, OPTION is held during boot to disable BASIC ROM mapping for software that requires BASIC off.">
+            <i class="fa-solid fa-hand-point-down"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="screenPanel">
+        <div class="screenViewport">
+          <canvas id="screen" width="336" height="240"></canvas>
+        </div>
+        <section id="joystickPanel" class="joystickPanel" hidden aria-label="On-screen joystick controls">
+          <div class="joystickPanelInner">
+            <div class="cx40" id="joystickArea">
+              <div class="cx40-base">
+                <div class="cx40-cable"></div>
+                <div class="cx40-fire-housing">
+                  <button type="button" class="cx40-fire-btn" id="fireButton" aria-label="Joystick fire"></button>
+                </div>
+                <div class="cx40-markings-ring">
+                  <div class="cx40-arrow cx40-arrow-up"></div>
+                  <div class="cx40-arrow cx40-arrow-down"></div>
+                  <div class="cx40-arrow cx40-arrow-left"></div>
+                  <div class="cx40-arrow cx40-arrow-right"></div>
+                </div>
+                <div class="cx40-top-label">TOP</div>
+                <div class="cx40-boot">
+                  <div class="cx40-glow up" id="glowUp"></div>
+                  <div class="cx40-glow down" id="glowDown"></div>
+                  <div class="cx40-glow left" id="glowLeft"></div>
+                  <div class="cx40-glow right" id="glowRight"></div>
+                  <div class="cx40-stick-area" id="joystickStick">
+                    <div class="cx40-stick-hex"></div>
+                    <div class="cx40-stick-shaft"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+      <section
+        id="keyboardPanel"
+        class="keyboardPanel"
+        aria-label="On-screen Atari 800 XL keyboard"
+      >
+        <div id="atariKeyboard" class="atariKeyboard" role="group" aria-label="Atari 800 XL keyboard keys">
+          <div class="atari">
+            <div class="case-keyboard">
+              <div class="deck">
+                <div class="main">
+                  <div class="row">
+                    <button type="button" class="kbKey key small" style="--w: 1.15;" data-key="Escape" data-code="Escape">ESC</button>
+                    <button type="button" class="kbKey key" data-key="1" data-code="Digit1"><span class="leg"><span class="top">!</span><span class="mainlbl">1</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="2" data-code="Digit2"><span class="leg"><span class="top">&quot;</span><span class="mainlbl">2</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="3" data-code="Digit3"><span class="leg"><span class="top">#</span><span class="mainlbl">3</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="4" data-code="Digit4"><span class="leg"><span class="top">$</span><span class="mainlbl">4</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="5" data-code="Digit5"><span class="leg"><span class="top">%</span><span class="mainlbl">5</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="6" data-code="Digit6"><span class="leg"><span class="top">&amp;</span><span class="mainlbl">6</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="7" data-code="Digit7"><span class="leg"><span class="top">'</span><span class="mainlbl">7</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="8" data-code="Digit8"><span class="leg"><span class="top">@</span><span class="mainlbl">8</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="9" data-code="Digit9"><span class="leg"><span class="top">(</span><span class="mainlbl">9</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key" data-key="0" data-code="Digit0"><span class="leg"><span class="top">)</span><span class="mainlbl">0</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key small" data-key="[" data-code="BracketLeft"><span class="leg"><span class="top">CLEAR</span><span class="mainlbl">&lt;</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key small" data-key="]" data-code="BracketRight"><span class="leg"><span class="top">INSERT</span><span class="mainlbl">&gt;</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key small" style="--w: 1.55;" data-key="Backspace" data-code="Backspace" aria-label="Delete / Backspace"><span class="leg"><span class="top">DELETE</span><span class="mainlbl">BACK</span><span class="sublbl">SPACE</span></span></button>
+                    <button type="button" class="kbKey key small" style="--w: 1.15;" data-key="F8" data-code="F8" data-sdl="289">BREAK</button>
+                  </div>
+                  <div class="row">
+                    <button type="button" class="kbKey key small" style="--w: 1.55;" data-key="Tab" data-code="Tab"><span class="leg"><span class="top">CLR</span><span class="mainlbl">SET</span><span class="sublbl">TAB</span></span></button>
+                    <button type="button" class="kbKey key" data-key="q" data-code="KeyQ">Q</button>
+                    <button type="button" class="kbKey key" data-key="w" data-code="KeyW">W</button>
+                    <button type="button" class="kbKey key" data-key="e" data-code="KeyE">E</button>
+                    <button type="button" class="kbKey key" data-key="r" data-code="KeyR">R</button>
+                    <button type="button" class="kbKey key" data-key="t" data-code="KeyT">T</button>
+                    <button type="button" class="kbKey key" data-key="y" data-code="KeyY">Y</button>
+                    <button type="button" class="kbKey key" data-key="u" data-code="KeyU">U</button>
+                    <button type="button" class="kbKey key" data-key="i" data-code="KeyI">I</button>
+                    <button type="button" class="kbKey key" data-key="o" data-code="KeyO">O</button>
+                    <button type="button" class="kbKey key" data-key="p" data-code="KeyP">P</button>
+                    <button type="button" class="kbKey key small" data-key="-" data-code="Minus"><span class="leg"><span class="top">&#x2191;</span><span class="mainlbl">-</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key small" data-key="=" data-code="Equal"><span class="leg"><span class="top">&#x2193;</span><span class="mainlbl">=</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key wide small" style="--w: 1.75;" data-key="Enter" data-code="Enter">RETURN</button>
+                  </div>
+                  <div class="row">
+                    <button type="button" class="kbKey key wide small" style="--w: 1.75;" data-modifier="ctrl">CONTROL</button>
+                    <button type="button" class="kbKey key" data-key="a" data-code="KeyA">A</button>
+                    <button type="button" class="kbKey key" data-key="s" data-code="KeyS">S</button>
+                    <button type="button" class="kbKey key" data-key="d" data-code="KeyD">D</button>
+                    <button type="button" class="kbKey key" data-key="f" data-code="KeyF">F</button>
+                    <button type="button" class="kbKey key" data-key="g" data-code="KeyG">G</button>
+                    <button type="button" class="kbKey key" data-key="h" data-code="KeyH">H</button>
+                    <button type="button" class="kbKey key" data-key="j" data-code="KeyJ">J</button>
+                    <button type="button" class="kbKey key" data-key="k" data-code="KeyK">K</button>
+                    <button type="button" class="kbKey key" data-key="l" data-code="KeyL">L</button>
+                    <button type="button" class="kbKey key small" data-key=";" data-code="Semicolon"><span class="leg"><span class="top">:</span><span class="mainlbl">;</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key small" data-key="'" data-code="Quote"><span class="leg"><span class="top">\</span><span class="mainlbl">+</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key small" data-key="\\" data-code="Backslash" data-sdl="92"><span class="leg"><span class="top">^</span><span class="mainlbl">*</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key wide small" style="--w: 1.55;" data-key="CapsLock" data-code="CapsLock" data-sdl="301">CAPS</button>
+                  </div>
+                  <div class="row">
+                    <button type="button" class="kbKey key wide small" style="--w: 2.1;" data-modifier="shift">SHIFT</button>
+                    <button type="button" class="kbKey key" data-key="z" data-code="KeyZ">Z</button>
+                    <button type="button" class="kbKey key" data-key="x" data-code="KeyX">X</button>
+                    <button type="button" class="kbKey key" data-key="c" data-code="KeyC">C</button>
+                    <button type="button" class="kbKey key" data-key="v" data-code="KeyV">V</button>
+                    <button type="button" class="kbKey key" data-key="b" data-code="KeyB">B</button>
+                    <button type="button" class="kbKey key" data-key="n" data-code="KeyN">N</button>
+                    <button type="button" class="kbKey key" data-key="m" data-code="KeyM">M</button>
+                    <button type="button" class="kbKey key small" data-key="," data-code="Comma"><span class="leg"><span class="top">[</span><span class="mainlbl">,</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key small" data-key="." data-code="Period"><span class="leg"><span class="top">]</span><span class="mainlbl">.</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key small" data-key="/" data-code="Slash"><span class="leg"><span class="top">?</span><span class="mainlbl">/</span><span class="sublbl"></span></span></button>
+                    <button type="button" class="kbKey key wide small" style="--w: 2.1;" data-modifier="shift">SHIFT</button>
+                    <button type="button" class="kbKey key small" data-key="F6" data-code="F6" data-sdl="287" aria-label="Inverse video" title="Inverse Video">&#x25E2;</button>
+                  </div>
+                  <div class="row">
+                    <div class="spacer" style="--w: 2.1;"></div>
+                    <button type="button" class="kbKey key space small" style="--w: 9.8;" data-key=" " data-code="Space" aria-label="Space"></button>
+                    <div class="spacer" style="--w: 2.1;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="case-side" aria-label="System keys">
+              <div class="side-keys">
+                <button type="button" class="kbKey side-key" data-key="F5" data-code="F5" data-sdl="286" aria-label="RESET"></button>
+                <button type="button" class="kbKey side-key" data-key="F2" data-code="F2" data-sdl="283" aria-label="OPTION"></button>
+                <button type="button" class="kbKey side-key" data-key="F3" data-code="F3" data-sdl="284" aria-label="SELECT"></button>
+                <button type="button" class="kbKey side-key" data-key="F4" data-code="F4" data-sdl="285" aria-label="START"></button>
+                <button type="button" class="kbKey side-key" data-key="F1" data-code="F1" data-sdl="282" aria-label="HELP"></button>
+              </div>
+              <div class="strip" aria-hidden="true">
+                <div class="strip-label">RESET</div>
+                <div class="strip-label">OPTION</div>
+                <div class="strip-label">SELECT</div>
+                <div class="strip-label">START</div>
+                <div class="strip-label">HELP</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="js/shared/util.js"></script>
+    <script src="js/render/palette.js"></script>
+    <script src="js/render/software.js"></script>
+    <script src="js/core/cpu_tables.js"></script>
+    <script src="js/core/cpu.js"></script>
+    <script src="js/render/gl.js"></script>
+    <script src="js/core/pokey_sio.js"></script>
+    <script src="js/core/pokey.js"></script>
+    <script src="js/audio/runtime.js"></script>
+    <script src="js/core/keys.js"></script>
+    <script src="js/core/input.js"></script>
+    <script src="js/core/hw.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/core/memory.js"></script>
+    <script src="js/core/io.js"></script>
+    <script src="js/core/playfield.js"></script>
+    <script src="js/core/antic.js"></script>
+    <script src="js/core/gtia.js"></script>
+    <script src="js/core/atari.js"></script>
+    <script src="js/app/ui.js"></script>
+    <script src="js/app/version.js"></script>
+    <script src="js/app/a8e.js"></script>
+  </body>
+</html>
