@@ -364,171 +364,45 @@ function base64ToUint8Array(b64) {
 }
 
 // =============================================================================
-// Build a self-booting ATR disk image with a 6502 boot loader
-// that loads the Castle Quest BASIC program directly into RAM.
-//
-// Disk layout:
-//   Sectors 1-2:  Boot loader (loaded at $3000 by Atari OS)
-//   Sectors 3-71: Castle Quest .bas file data (69 sectors)
-//   Sectors 72+:  Unused
-//
-// Boot sequence:
-//   1. Atari OS reads sectors 1-2 into $3000 and calls INIT at $3006
-//   2. Boot loader reads sectors 3-71 via SIO into $06F2
-//      (14-byte .bas header lands at $06F2-$06FF, program data at $0700 = LOMEM)
-//   3. Boot loader sets BASIC zero-page pointers ($80-$8F)
-//   4. Boot loader sets WARMST ($0008) = $FF
-//   5. Returns to OS → OS starts BASIC → BASIC warm starts with program loaded
-//   6. User types RUN (or we auto-type it via JavaScript)
+// Inject Castle Quest BASIC program directly into emulator RAM.
+// Called after BASIC has booted and is showing the READY prompt.
+// Writes the tokenized program data at LOMEM ($0700) and sets all
+// BASIC zero-page pointers so that typing RUN starts the game.
 // =============================================================================
-function buildBootableATR(basBytes) {
-  var SECTOR_SIZE = 128;
-  var TOTAL_SECTORS = 720; // standard single-density
-  var ATR_HEADER = 16;
-  var BOOT_SECTORS = 2;
-  var dataSectors = Math.ceil(basBytes.length / SECTOR_SIZE); // 69 for 8711 bytes
-  var FIRST_DATA_SECTOR = BOOT_SECTORS + 1; // sector 3
+function injectGameIntoRam(app, basBytes) {
+  var ram = app.getRam();
+  var LOMEM_BASE = 0x0700;
 
-  var diskBytes = TOTAL_SECTORS * SECTOR_SIZE;
-  var atr = new Uint8Array(ATR_HEADER + diskBytes);
-
-  // ATR header: magic $9602, size in 16-byte paragraphs, sector size
-  var para = diskBytes >> 4;
-  atr[0] = 0x96; atr[1] = 0x02;
-  atr[2] = para & 0xFF; atr[3] = (para >> 8) & 0xFF;
-  atr[4] = SECTOR_SIZE & 0xFF; atr[5] = (SECTOR_SIZE >> 8) & 0xFF;
-  atr[6] = (para >> 16) & 0xFF;
-
-  function secOff(n) { return ATR_HEADER + (n - 1) * SECTOR_SIZE; }
-
-  // --- Parse .bas header to get BASIC pointer offsets ---
-  // Header: 7 x 16-bit LE values (relative to LOMEM)
+  // Parse .bas header: 7 x 16-bit LE offsets relative to LOMEM
   //   [0]=LOMEM(0), [1]=VNTP, [2]=VNTD, [3]=VVTP,
   //   [4]=STMTAB, [5]=STARP, [6]=RUNSTK
-  var LOMEM_BASE = 0x0700;
   var hdr = [];
   for (var h = 0; h < 7; h++) {
-    hdr.push((basBytes[h * 2] | (basBytes[h * 2 + 1] << 8)));
-  }
-  var pLOMEM  = LOMEM_BASE;
-  var pVNTP   = LOMEM_BASE + hdr[1];
-  var pVNTD   = LOMEM_BASE + hdr[2];
-  var pVVTP   = LOMEM_BASE + hdr[3];
-  var pSTMTAB = LOMEM_BASE + hdr[4];
-  var pSTARP  = LOMEM_BASE + hdr[5];
-
-  // --- Build 6502 boot loader machine code ---
-  var code = [];
-  function emit() { for (var i = 0; i < arguments.length; i++) code.push(arguments[i] & 0xFF); }
-
-  // Boot sector header (6 bytes at $3000)
-  emit(0x01);       // BFLAG: bootable, call INIT vector
-  emit(BOOT_SECTORS); // BRCNT: 2 boot sectors
-  emit(0x00, 0x30); // BOOTAD: load at $3000
-  emit(0x06, 0x30); // BWTINI: init routine at $3006
-
-  // === INIT routine ($3006) ===
-
-  // Set up SIO Device Control Block for disk read
-  emit(0xA9, 0x31, 0x8D, 0x00, 0x03); // LDA #$31; STA $0300 (DDEVIC=disk)
-  emit(0xA9, 0x01, 0x8D, 0x01, 0x03); // LDA #$01; STA $0301 (DUNIT=1)
-  emit(0xA9, 0x52, 0x8D, 0x02, 0x03); // LDA #$52; STA $0302 (DCOMND=Read)
-  emit(0xA9, 0x40, 0x8D, 0x03, 0x03); // LDA #$40; STA $0303 (DSTATS=recv)
-  emit(0xA9, 0x80, 0x8D, 0x08, 0x03); // LDA #$80; STA $0308 (DBYTLO=128)
-  emit(0xA9, 0x00, 0x8D, 0x09, 0x03); // LDA #$00; STA $0309 (DBYTHI=0)
-  emit(0xA9, 0x07, 0x8D, 0x06, 0x03); // LDA #$07; STA $0306 (DTIMLO=7sec)
-
-  // Buffer starts at $06F2 = LOMEM - 14 (header before program data)
-  var readTarget = LOMEM_BASE - 14; // $06F2
-  emit(0xA9, readTarget & 0xFF, 0x8D, 0x04, 0x03);       // LDA #$F2; STA DBUFLO
-  emit(0xA9, (readTarget >> 8) & 0xFF, 0x8D, 0x05, 0x03); // LDA #$06; STA DBUFHI
-
-  // Starting sector
-  emit(0xA9, FIRST_DATA_SECTOR & 0xFF, 0x8D, 0x0A, 0x03);       // STA DAUX1
-  emit(0xA9, (FIRST_DATA_SECTOR >> 8) & 0xFF, 0x8D, 0x0B, 0x03); // STA DAUX2
-
-  // Sector count
-  emit(0xA2, dataSectors & 0xFF); // LDX #dataSectors
-
-  // --- Read loop ---
-  var loopStart = code.length;
-
-  emit(0x8A);                   // TXA
-  emit(0x48);                   // PHA (save counter)
-  emit(0x20, 0x59, 0xE4);      // JSR $E459 (SIOV)
-
-  // Advance buffer pointer by 128
-  emit(0x18);                   // CLC
-  emit(0xAD, 0x04, 0x03);      // LDA $0304
-  emit(0x69, 0x80);             // ADC #$80
-  emit(0x8D, 0x04, 0x03);      // STA $0304
-  emit(0x90, 0x03);             // BCC +3 (skip INC)
-  emit(0xEE, 0x05, 0x03);      // INC $0305
-
-  // Advance sector number
-  emit(0xEE, 0x0A, 0x03);      // INC $030A
-  emit(0xD0, 0x03);             // BNE +3 (skip INC)
-  emit(0xEE, 0x0B, 0x03);      // INC $030B
-
-  // Decrement counter and loop
-  emit(0x68);                   // PLA
-  emit(0xAA);                   // TAX
-  emit(0xCA);                   // DEX
-  var bnePos = code.length;
-  emit(0xD0, 0x00);             // BNE loop (placeholder offset)
-  // Fix BNE offset: target=loopStart, PC after BNE = bnePos+2
-  code[bnePos + 1] = (loopStart - (bnePos + 2)) & 0xFF;
-
-  // --- Set BASIC zero-page pointers ---
-  // $80-81: LOMEM
-  emit(0xA9, pLOMEM & 0xFF,  0x85, 0x80);
-  emit(0xA9, (pLOMEM >> 8) & 0xFF,  0x85, 0x81);
-  // $82-83: VNTP
-  emit(0xA9, pVNTP & 0xFF,   0x85, 0x82);
-  emit(0xA9, (pVNTP >> 8) & 0xFF,   0x85, 0x83);
-  // $84-85: VNTD
-  emit(0xA9, pVNTD & 0xFF,   0x85, 0x84);
-  emit(0xA9, (pVNTD >> 8) & 0xFF,   0x85, 0x85);
-  // $86-87: VVTP
-  emit(0xA9, pVVTP & 0xFF,   0x85, 0x86);
-  emit(0xA9, (pVVTP >> 8) & 0xFF,   0x85, 0x87);
-  // $88-89: STMTAB
-  emit(0xA9, pSTMTAB & 0xFF, 0x85, 0x88);
-  emit(0xA9, (pSTMTAB >> 8) & 0xFF, 0x85, 0x89);
-  // $8A-8B: STMCUR (set to STMTAB for clean state)
-  emit(0xA9, pSTMTAB & 0xFF, 0x85, 0x8A);
-  emit(0xA9, (pSTMTAB >> 8) & 0xFF, 0x85, 0x8B);
-  // $8C-8D: STARP
-  emit(0xA9, pSTARP & 0xFF,  0x85, 0x8C);
-  emit(0xA9, (pSTARP >> 8) & 0xFF,  0x85, 0x8D);
-  // $8E-8F: RUNSTK (= STARP initially)
-  emit(0xA9, pSTARP & 0xFF,  0x85, 0x8E);
-  emit(0xA9, (pSTARP >> 8) & 0xFF,  0x85, 0x8F);
-
-  // Set WARMST flag at $0008 = non-zero (triggers BASIC warm start)
-  emit(0xA9, 0xFF);             // LDA #$FF
-  emit(0x85, 0x08);             // STA $08
-
-  // Return to OS boot sequence
-  emit(0x60);                   // RTS
-
-  // --- Write boot loader to sectors 1-2 ---
-  var bootBytes = new Uint8Array(code);
-  var s1 = secOff(1);
-  atr.set(bootBytes.subarray(0, Math.min(128, bootBytes.length)), s1);
-  if (bootBytes.length > 128) {
-    atr.set(bootBytes.subarray(128, Math.min(256, bootBytes.length)), secOff(2));
+    hdr.push(basBytes[h * 2] | (basBytes[h * 2 + 1] << 8));
   }
 
-  // --- Write .bas file data to sectors 3+ ---
-  for (var i = 0; i < dataSectors; i++) {
-    var start = i * SECTOR_SIZE;
-    var end = Math.min(start + SECTOR_SIZE, basBytes.length);
-    var chunk = basBytes.subarray(start, end);
-    atr.set(chunk, secOff(FIRST_DATA_SECTOR + i));
+  // Write program data (skip 14-byte header) into RAM at LOMEM
+  for (var i = 14; i < basBytes.length; i++) {
+    ram[LOMEM_BASE + (i - 14)] = basBytes[i];
   }
 
-  return atr;
+  // Set BASIC zero-page pointers ($80-$8F)
+  var pointers = [
+    [0x80, LOMEM_BASE],                 // LOMEM
+    [0x82, LOMEM_BASE + hdr[1]],        // VNTP
+    [0x84, LOMEM_BASE + hdr[2]],        // VNTD
+    [0x86, LOMEM_BASE + hdr[3]],        // VVTP
+    [0x88, LOMEM_BASE + hdr[4]],        // STMTAB
+    [0x8A, LOMEM_BASE + hdr[4]],        // STMCUR = STMTAB
+    [0x8C, LOMEM_BASE + hdr[5]],        // STARP
+    [0x8E, LOMEM_BASE + hdr[5]],        // RUNSTK = STARP
+  ];
+  for (var p = 0; p < pointers.length; p++) {
+    var zpAddr = pointers[p][0];
+    var val = pointers[p][1];
+    ram[zpAddr] = val & 0xFF;
+    ram[zpAddr + 1] = (val >> 8) & 0xFF;
+  }
 }
 
 // =============================================================================
@@ -579,20 +453,12 @@ var gameStatus = document.getElementById("gameStatus");
 var btnPlay = document.getElementById("btnPlay");
 var btnAutoRun = document.getElementById("btnAutoRun");
 var btnInfo = document.getElementById("btnInfo");
-var gameAtr = null;   // built ATR data
+var gameBas = null;   // decoded .bas bytes
 var gameStarted = false;
 
 function setStatus(msg, color) {
   gameStatus.textContent = msg;
   gameStatus.style.color = color || "#ccc";
-}
-
-function updateDiskStatusIcon(loaded) {
-  var ds = document.getElementById("diskStatus");
-  if (loaded) {
-    ds.classList.remove("fa-circle-xmark");
-    ds.classList.add("fa-circle-check");
-  }
 }
 
 // Info panel toggle
@@ -607,20 +473,23 @@ btnPlay.addEventListener("click", function() {
   btnPlay.disabled = true;
   _cqApp.start();
   document.getElementById("screen").focus();
-  setStatus("Booting Atari... game will load automatically.", "#88ff88");
-  // Enable auto-run button after boot delay
+  setStatus("Booting Atari BASIC...", "#88ff88");
+  // Enable auto-run button after BASIC boots
   setTimeout(function() {
     btnAutoRun.disabled = false;
-    setStatus("BASIC shows READY. Click 'Type RUN' or type RUN + RETURN yourself.", "#ffcc00");
-  }, 5000);
+    setStatus("BASIC ready. Click 'Type RUN' to start Castle Quest.", "#ffcc00");
+  }, 3000);
 });
 
-// Auto-type RUN button
+// Auto-type RUN button: inject game into RAM then type RUN
 btnAutoRun.addEventListener("click", function() {
-  if (!_cqApp) return;
+  if (!_cqApp || !gameBas) return;
   btnAutoRun.disabled = true;
   document.getElementById("screen").focus();
-  setStatus("Typing RUN...", "#88ff88");
+  setStatus("Loading game into memory...", "#88ff88");
+  // Inject the BASIC program directly into emulator RAM
+  injectGameIntoRam(_cqApp, gameBas);
+  // Type RUN + RETURN to start the game
   typeStringIntoEmulator(_cqApp, "RUN\n", function() {
     setStatus("Game running! Use arrow keys to move, Left Alt for fire.", "#88ff88");
   });
@@ -630,9 +499,8 @@ btnAutoRun.addEventListener("click", function() {
 // Main startup - replaces a8e.js
 // =============================================================================
 (function() {
-  // Build the game ATR immediately
-  var basBytes = base64ToUint8Array(QUEST_BAS_B64);
-  gameAtr = buildBootableATR(basBytes);
+  // Decode the game .bas file
+  gameBas = base64ToUint8Array(QUEST_BAS_B64);
 
   // Watch for ROMs to be loaded (by auto-fetch or manual file input)
   function checkReady() {
@@ -657,10 +525,6 @@ btnAutoRun.addEventListener("click", function() {
       setStatus("Error: emulator failed to initialize.", "#ff4444");
       return;
     }
-
-    // Load the game ATR disk
-    _cqApp.loadDisk1(gameAtr.buffer, "CASTLE_QUEST.ATR");
-    updateDiskStatusIcon(true);
 
     // Load embedded Altirra replacement ROMs
     try {

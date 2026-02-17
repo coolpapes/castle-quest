@@ -798,6 +798,7 @@
       loadDisk1: loadDisk1,
       hasOsRom: hasOsRom,
       hasBasicRom: hasBasicRom,
+      getRam: function () { return machine.ctx.ram; },
       hasDisk1: hasDisk1,
       isReady: isReady,
       isRunning: function () {
