@@ -321,7 +321,7 @@
 <script src="A8E/jsA8E/js/core/playfield.js"></script>
 <script src="A8E/jsA8E/js/core/antic.js"></script>
 <script src="A8E/jsA8E/js/core/gtia.js"></script>
-<script src="A8E/jsA8E/js/core/atari.js"></script>
+<script src="A8E/jsA8E/js/core/atari.js?v=2"></script>
 <script src="A8E/jsA8E/js/app/ui.js"></script>
 <script src="A8E/jsA8E/js/app/version.js"></script>
 
@@ -333,6 +333,7 @@
 
 // --- Monkey-patch A8EApp.create to capture the app instance ---
 var _cqApp = null;
+var _cqRam = null;  // emulator's 64KB RAM array, captured during ROM loading
 (function() {
   var origCreate = window.A8EApp.create;
   window.A8EApp.create = function(opts) {
@@ -369,8 +370,7 @@ function base64ToUint8Array(b64) {
 // Writes the tokenized program data at LOMEM ($0700) and sets all
 // BASIC zero-page pointers so that typing RUN starts the game.
 // =============================================================================
-function injectGameIntoRam(app, basBytes) {
-  var ram = app.getRam();
+function injectGameIntoRam(ram, basBytes) {
   var LOMEM_BASE = 0x0700;
 
   // Parse .bas header: 7 x 16-bit LE offsets relative to LOMEM
@@ -486,9 +486,28 @@ btnAutoRun.addEventListener("click", function() {
   if (!_cqApp || !gameBas) return;
   btnAutoRun.disabled = true;
   document.getElementById("screen").focus();
+
+  // Get RAM reference: try captured reference first, then getRam() API
+  var ram = _cqRam;
+  if (!ram && typeof _cqApp.getRam === "function") {
+    try { ram = _cqApp.getRam(); } catch(e) { console.error("getRam() failed:", e); }
+  }
+  if (!ram) {
+    setStatus("ERROR: Cannot access emulator RAM. Try hard-refreshing (Ctrl+Shift+R).", "#ff4444");
+    btnAutoRun.disabled = false;
+    return;
+  }
+
   setStatus("Loading game into memory...", "#88ff88");
-  // Inject the BASIC program directly into emulator RAM
-  injectGameIntoRam(_cqApp, gameBas);
+  try {
+    injectGameIntoRam(ram, gameBas);
+  } catch(e) {
+    setStatus("ERROR injecting game: " + e.message, "#ff4444");
+    console.error("Injection error:", e);
+    btnAutoRun.disabled = false;
+    return;
+  }
+
   // Type RUN + RETURN to start the game
   typeStringIntoEmulator(_cqApp, "RUN\n", function() {
     setStatus("Game running! Use arrow keys to move, Left Alt for fire.", "#88ff88");
@@ -526,9 +545,22 @@ btnAutoRun.addEventListener("click", function() {
       return;
     }
 
-    // Load embedded Altirra replacement ROMs
+    // Load embedded Altirra replacement ROMs.
+    // Also capture the emulator's 64KB RAM array by intercepting
+    // Uint8Array.prototype.set during loadOsRom → setupMemoryMap,
+    // which copies the OS ROM into ctx.ram at offset $C000.
+    var origUint8Set = Uint8Array.prototype.set;
+    Uint8Array.prototype.set = function(source, offset) {
+      if (offset === 0xc000 && this.length === 0x10000 && !_cqRam) {
+        _cqRam = this;
+        console.log("Captured emulator RAM reference (" + this.length + " bytes)");
+      }
+      return origUint8Set.call(this, source, offset);
+    };
+
     try {
       var osRomBytes = base64ToUint8Array(ALTIRRA_OS_B64);
+      console.log("OS ROM decoded:", osRomBytes.length, "bytes");
       _cqApp.loadOsRom(osRomBytes.buffer);
       var romOsStatus = document.getElementById("romOsStatus");
       if (romOsStatus) { romOsStatus.classList.remove("fa-circle-xmark"); romOsStatus.classList.add("fa-circle-check"); }
@@ -536,14 +568,20 @@ btnAutoRun.addEventListener("click", function() {
 
     try {
       var basicRomBytes = base64ToUint8Array(ALTIRRA_BASIC_B64);
+      console.log("BASIC ROM decoded:", basicRomBytes.length, "bytes");
       _cqApp.loadBasicRom(basicRomBytes.buffer);
       var romBasicStatus = document.getElementById("romBasicStatus");
       if (romBasicStatus) { romBasicStatus.classList.remove("fa-circle-xmark"); romBasicStatus.classList.add("fa-circle-check"); }
     } catch(e) { console.error("BASIC ROM load error:", e); }
 
+    // Restore original prototype method
+    Uint8Array.prototype.set = origUint8Set;
+    console.log("RAM captured:", !!_cqRam, "getRam available:", typeof (_cqApp && _cqApp.getRam));
+
     // Check if ready
     if (!checkReady()) {
-      setStatus("ROM loading failed. Use the ROM buttons above to load manually.", "#ff4444");
+      var detail = "hasOS=" + _cqApp.hasOsRom() + " hasBASIC=" + _cqApp.hasBasicRom() + " RAM=" + !!_cqRam;
+      setStatus("ROM loading failed (" + detail + "). Try hard-refreshing (Ctrl+Shift+R).", "#ff4444");
       readyInterval = setInterval(function() {
         if (checkReady() && readyInterval) {
           clearInterval(readyInterval);
