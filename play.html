@@ -422,7 +422,7 @@ function buildBootableATR(basBytes) {
   function emit() { for (var i = 0; i < arguments.length; i++) code.push(arguments[i] & 0xFF); }
 
   // Boot sector header (6 bytes at $3000)
-  emit(0x00);       // BFLAG: INIT only (no RUN vector)
+  emit(0x01);       // BFLAG: bootable, call INIT vector
   emit(BOOT_SECTORS); // BRCNT: 2 boot sectors
   emit(0x00, 0x30); // BOOTAD: load at $3000
   emit(0x06, 0x30); // BWTINI: init routine at $3006
