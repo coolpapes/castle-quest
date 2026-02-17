@@ -430,9 +430,11 @@ function typeStringIntoEmulator(app, str, callback) {
     if (ch === "\n") {
       sendKeyToApp(app, "Enter", "Enter", false);
     } else if (ch >= "A" && ch <= "Z") {
-      sendKeyToApp(app, ch.toLowerCase(), "Key" + ch, true);
+      // Atari: unshifted = uppercase (opposite of modern keyboards)
+      sendKeyToApp(app, ch.toLowerCase(), "Key" + ch, false);
     } else if (ch >= "a" && ch <= "z") {
-      sendKeyToApp(app, ch, "Key" + ch.toUpperCase(), false);
+      // Atari: shifted = lowercase
+      sendKeyToApp(app, ch, "Key" + ch.toUpperCase(), true);
     } else if (ch >= "0" && ch <= "9") {
       sendKeyToApp(app, ch, "Digit" + ch, false);
     } else if (ch === " ") {
